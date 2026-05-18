@@ -1,4 +1,4 @@
-# 📘 Documento 1 — Guia do Aluno: Passo a Passo para Configurar uma API com FastAPI
+# 📘 Documento 1 — Passo a Passo para Configurar uma API com FastAPI
 
 ---
 
@@ -105,11 +105,14 @@ Crie a classe que representa a tabela do banco de dados. Exemplo com a tabela de
 from sqlalchemy import Column, Integer, String
 from database import Base
 
-class Estado(Base):
-    __tablename__ = "estados"
+class Time(Base):
+    __tablename__ = "tb_times"
 
-    cod_estado = Column(Integer, primary_key=True)
-    nome_estado = Column(String(100))
+    cod_time = Column(Integer, primary_key=True, index=True)
+    nome_time = Column(String(100), nullable=False)
+    sigla_time = Column(String(17), nullable=False)
+    estado_time = Column(String(50), nullable=False)
+    pais_time = Column(String(50), nullable=False)
 ```
 
 ---
@@ -121,12 +124,17 @@ Crie os modelos de validação de dados com Pydantic:
 ```python
 from pydantic import BaseModel
 
-class EstadoCreate(BaseModel):
-    nome_estado: str
+class TimeBase(BaseModel):
+    nome_time: str
+    sigla_time: str
+    estado_time: str
+    pais_time: str
 
-class EstadoResponse(BaseModel):
-    cod_estado: int
-    nome_estado: str
+class TimeCreate(TimeBase):
+    pass
+
+class TimeResponse(TimeBase):
+    cod_time: int
 
     class Config:
         from_attributes = True
@@ -140,50 +148,72 @@ class EstadoResponse(BaseModel):
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-import models, schemas
+from typing import List
+
+import models
+import schemas
 from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+app = FastAPI(title="API Sistema Futebolístico", description="Operações do banco db_time")
 
+# Configuração aberta de CORS (Compartilhamento de Recursos de Origem Cruzada)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/estados/", response_model=list[schemas.EstadoResponse])
-def listar_estados(db: Session = Depends(get_db)):
-    return db.query(models.Estado).all()
+@app.get("/times/", response_model=List[schemas.TimeResponse])
+def listar_times(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    lista = db.query(models.Time).offset(skip).limit(limit).all()
+    return lista
 
-@app.post("/estados/", response_model=schemas.EstadoResponse)
-def criar_estado(estado: schemas.EstadoCreate, db: Session = Depends(get_db)):
-    novo = models.Estado(nome_estado=estado.nome_estado)
-    db.add(novo)
+@app.post("/times/", response_model=schemas.TimeResponse, status_code=201)
+def criar_time(time: schemas.TimeCreate, db: Session = Depends(get_db)):
+    novo_time = models.Time(
+        nome_time=time.nome_time,
+        sigla_time=time.sigla_time,
+        estado_time=time.estado_time,
+        pais_time=time.pais_time
+    )
+    db.add(novo_time)
     db.commit()
-    db.refresh(novo)
-    return novo
+    db.refresh(novo_time)
+    return novo_time
 
-@app.put("/estados/{cod}", response_model=schemas.EstadoResponse)
-def atualizar_estado(cod: int, estado: schemas.EstadoCreate, db: Session = Depends(get_db)):
-    obj = db.query(models.Estado).filter(models.Estado.cod_estado == cod).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="Estado não encontrado")
-    obj.nome_estado = estado.nome_estado
-    db.commit()
-    db.refresh(obj)
-    return obj
+@app.get("/times/{cod_time}", response_model=schemas.TimeResponse)
+def buscar_time(cod_time: int, db: Session = Depends(get_db)):
+    time = db.query(models.Time).filter(models.Time.cod_time == cod_time).first()
+    if time is None:
+        raise HTTPException(status_code=404, detail="Time Inexistente.")
+    return time
 
-@app.delete("/estados/{cod}")
-def deletar_estado(cod: int, db: Session = Depends(get_db)):
-    obj = db.query(models.Estado).filter(models.Estado.cod_estado == cod).first()
-    if not obj:
-        raise HTTPException(status_code=404, detail="Estado não encontrado")
-    db.delete(obj)
+@app.put("/times/{cod_time}", response_model=schemas.TimeResponse)
+def atualizar_time(cod_time: int, time_novo: schemas.TimeCreate, db: Session = Depends(get_db)):
+    time = db.query(models.Time).filter(models.Time.cod_time == cod_time).first()
+    if time is None:
+        raise HTTPException(status_code=404, detail="Time Inexistente.")
+    
+    time.nome_time = time_novo.nome_time
+    time.sigla_time = time_novo.sigla_time
+    
     db.commit()
-    return {"mensagem": "Estado deletado com sucesso"}
+    db.refresh(time)
+    return time
+
+@app.delete("/times/{cod_time}", status_code=204)
+def deletar_time(cod_time: int, db: Session = Depends(get_db)):
+    time = db.query(models.Time).filter(models.Time.cod_time == cod_time).first()
+    if time is None:
+        raise HTTPException(status_code=404, detail="Time Inexistente.")
+    
+    db.delete(time)
+    db.commit()
+    return None
 ```
 
 ---
