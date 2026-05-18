@@ -1,6 +1,5 @@
-# 🎤 Documento 2 — Guia do Palestrante: O Que Cada Arquivo e Comando Faz
+# 🎤 Documento 2 — O Que Cada Arquivo e Comando Faz
 
-> **Este documento é exclusivo para os palestrantes. Não distribua aos alunos.**
 > Use-o no dia anterior ao workshop para contextualizar a estrutura do projeto antes de partir para a prática.
 
 ---
@@ -66,9 +65,9 @@ Este arquivo ensina ao Python como as tabelas do banco estão estruturadas, usan
 
 **Exemplo:**
 ```python
-cod_estado = Column(Integer, primary_key=True)
+cod_time = Column(Integer, primary_key=True)
 ```
-Isso diz ao SQLAlchemy que `cod_estado` é um número inteiro e é a chave principal da tabela `estados`.
+Isso diz ao SQLAlchemy que `cod_time` é um número inteiro e é a chave principal da tabela `times`.
 
 Sem `models.py`, o Python não entende a estrutura do banco e o CRUD não funciona.
 
@@ -80,8 +79,8 @@ Este arquivo define o "contrato" da API: quais dados ela aceita e quais ela devo
 
 **O que ele faz:**
 
-- **Modelos de entrada** (`EstadoCreate`) — define o que o cliente precisa enviar para criar ou atualizar um registro.
-- **Modelos de resposta** (`EstadoResponse`) — define o que a API retorna ao cliente.
+- **Modelos de entrada** (`TimeCreate`) — define o que o cliente precisa enviar para criar ou atualizar um registro.
+- **Modelos de resposta** (`TimeResponse`) — define o que a API retorna ao cliente.
 - **Validação automática** — se um campo esperado como `str` receber um número, o FastAPI rejeita a requisição e retorna um erro de validação antes mesmo de tocar no banco de dados.
 
 Sem `schemas.py`, a API aceita praticamente qualquer dado, aumentando o risco de erros e inconsistências.
